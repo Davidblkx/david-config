@@ -10,20 +10,39 @@ New-Item -Path "$__DIR_TEMP" -Force -ItemType "Directory" | Out-Null
 
 #region HELPERS
 Function Get-RedirectedUrl {
- 
-    Param (
-        [Parameter(Mandatory=$true)]
-        [String]$URL
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [uri] $url,
+        [Parameter(Position = 1)]
+        [Microsoft.PowerShell.Commands.WebRequestSession] $session = $null
     )
- 
-    $request = [System.Net.WebRequest]::Create($url)
-    $request.AllowAutoRedirect=$false
-    $response=$request.GetResponse()
- 
-    If ($response.StatusCode -eq "Found")
-    {
-        $response.GetResponseHeader("Location")
-    }
+
+    $request_url = $url
+    $retry = $false
+
+    do {
+        try {
+            $response = Invoke-WebRequest -Method Head -WebSession $session -Uri $request_url
+
+            if ($null -ne $response.BaseResponse.RequestMessage.RequestUri) {
+                $result = $response.BaseResponse.RequestMessage.RequestUri.AbsoluteUri
+            }
+
+            $retry = $false
+        }
+        catch {
+            if (($_.Exception.GetType() -match "HttpResponseException") -and
+                ($_.Exception -match "302")) {
+                $request_url = $_.Exception.Response.Headers.Location.AbsoluteUri
+                $retry = $true
+            }
+            else {
+                throw $_
+            }
+        }  
+    } while ($retry)
+
+    return $result
 }
 
 Function Get-PowershellVersion {
