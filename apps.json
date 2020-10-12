@@ -5,5 +5,8 @@
     { "name": "git-config.ps1", "deps": ["git"] },
     { "name": "postman", "target": "win" },
     { "name": "vscode", "target": "win" },
-    { "name": "edge", "target": "win"}
+    { "name": "edge", "target": "win"},
+    { "name": "git-extras", "deps": ["git"] },
+    "zoom",
+    "tortoisesvn"
 ]
